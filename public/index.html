@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Bitcoin UTXO Stats</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Bitcoin UTXO Stats" />
+
+    <!-- Le styles -->
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300' rel='stylesheet' type='text/css'>
+    <link href="css/styles.css" rel="stylesheet" type="text/css">
+
+    <!-- Le javascripts -->
+    <script src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script type="text/javascript" src="js/bundle.js"></script>
+  </head>
+  <body>
+    <h1>Bitcoin UTXO Stats</h1>
+    <span id="updated-at"></span>
+    <p>
+      These two images visualizes the distribution of the unspent transaction outputs (UTXO) in the Bitcoin Blockchain.
+      Each pixel represents a block, where each row is about one week (~1,008 blocks).
+      The orange image displays the number of unspent transaction outputs per block, and the blue shows the
+      combined value of these unspent outputs.
+    </p>
+
+    <div class="blockchains">
+      <canvas id="utxo-count" width="1008" height="2000" style="width: 504px; height: 1000px;"></canvas>
+      <canvas id="utxo-amount" width="1008" height="2000" style="width: 504px; height: 1000px;"></canvas>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  padding: 100px 150px;
+  background-color: black;
+  font-family: Roboto;
+  text-align: center;
+}
+
+h1 {
+  color: white;
+  font-weight: 100;
+  margin: 0;
+}
+
+h1 + span {
+  color: #50a5e6;
+  font-size: 13px;
+  width: 100%;
+  display: inline-block;
+}
+
+p {
+  display: inline-block;
+  font-weight: 300;
+  color: white;
+  width: 900px;
+  margin-bottom: 50px;
+}
+
+.blockchains {
+
+}

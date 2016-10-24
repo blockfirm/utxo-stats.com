@@ -1,0 +1,18 @@
+{
+  "name": "utxo-stats",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify public/js/app.js -o public/js/bundle.js"
+  },
+  "author": "<timothy.ejohansson@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "bitcoin-core": "^1.1.0",
+    "buffer": "^5.0.0",
+    "express": "^4.13.3",
+    "moment": "^2.15.2"
+  }
+}
