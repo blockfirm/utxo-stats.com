@@ -2,31 +2,153 @@
 <html lang="en">
   <head>
     <title>Bitcoin UTXO Stats</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Bitcoin UTXO Stats" />
 
-    <!-- Le styles -->
-    <link href='https://fonts.googleapis.com/css?family=Roboto:400,100,300' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=1460, initial-scale=1">
+    <meta name="description" content="Visualizes the distribution of the unspent transaction outputs (UTXO) in the Bitcoin Blockchain.">
+    <meta name="keywords" content="bitcoin, utxo, blockchain, stats, unspent">
+    <meta name="author" content="timothy.ejohansson@gmail.com">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta property="og:title" content="Bitcoin UTXO Stats">
+    <meta property="og:description" content="Visualizes the distribution of the unspent transaction outputs (UTXO) in the Bitcoin Blockchain.">
+    <meta property="og:image" content="http://utxo-stats.com/img/screenshots/utxo-stats-com-square.png">
+
+    <link rel="shortcut icon" type="image/png" href="img/favicon.png">
+
     <link href="css/styles.css" rel="stylesheet" type="text/css">
+    <link href="css/fonts/sweden-sans/stylesheet.css" rel="stylesheet" type="text/css">
+    <link href="css/fonts/sweden-sans-bold/stylesheet.css" rel="stylesheet" type="text/css">
 
-    <!-- Le javascripts -->
     <script src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
-    <script type="text/javascript" src="js/bundle.js"></script>
   </head>
   <body>
-    <h1>Bitcoin UTXO Stats</h1>
-    <span id="updated-at"></span>
-    <p>
-      These two images visualizes the distribution of the unspent transaction outputs (UTXO) in the Bitcoin Blockchain.
-      Each pixel represents a block, where each row is about one week (~1,008 blocks).
-      The orange image displays the number of unspent transaction outputs per block, and the blue shows the
-      combined value of these unspent outputs.
-    </p>
+    <div id="app">
+      <div class="wrapper">
+        <div class="blockchains">
+          <ul class="timeline left">
+            <li v-for="(height, year) in blockYears" v-bind:style="{ top: (height / BLOCKS_PER_ROW) + 'px' }">
+              <span v-bind:title="'Block height ' + height">{{ year }}</span>
+            </li>
+          </ul>
 
-    <div class="blockchains">
-      <canvas id="utxo-count" width="1008" height="2000" style="width: 504px; height: 1000px;"></canvas>
-      <canvas id="utxo-amount" width="1008" height="2000" style="width: 504px; height: 1000px;"></canvas>
+          <a id="block-link" href="" target="_blank" tabindex="-1" v-show="loaded">
+            <canvas id="utxo-count" width="600" height="3000"></canvas>
+            <canvas id="utxo-amount" width="600" height="3000"></canvas>
+          </a>
+
+          <ul class="timeline right">
+            <li v-for="(height, year) in blockYears" v-bind:style="{ top: (height / BLOCKS_PER_ROW) + 'px' }">
+              <span v-bind:title="'Block height ' + height">{{ year }}</span>
+            </li>
+          </ul>
+
+          <transition name="fade">
+            <div class="fade top" v-show="!isAtTop"></div>
+          </transition>
+          <transition name="fade">
+            <div class="fade bottom" v-show="!isAtBottom"></div>
+          </transition>
+        </div>
+
+        <div class="info">
+          <h1>Bitcoin UTXO Stats</h1>
+          <span>
+            Updated {{ meta.updated_at_formatted }} at block height
+            <a class="blockheight" title="Block height" v-bind:href="'https://blockchain.info/search?search=' + meta.height" target="_blank">
+              {{ meta.height }}
+            </a>
+          </span>
+          <p>
+            These two images visualizes the distribution of the unspent transaction outputs (UTXO) in the Bitcoin Blockchain.
+            Each pixel represents a block, where each row is 300 blocks (~50 hours).
+            <span class="orange">The orange image displays the number of unspent transaction outputs per block,</span>
+            <span class="blue">and the blue shows the combined value of those outputs.</span>
+          </p>
+
+          <div class="stats">
+            <div class="stats-row">
+              <article>
+                <h2>{{ meta.txouts.toLocaleString() }}</h2>
+                <h3>total unspent outputs in all blocks</h3>
+              </article>
+              <article>
+                <a class="blockheight" title="Block height" v-bind:href="'https://blockchain.info/search?search=' + count.max.height" target="_blank">
+                  {{ count.max.height }}
+                </a>
+                <h2>{{ count.max.value.toLocaleString() }}</h2>
+                <h3>max unspent outputs in one block</h3>
+              </article>
+              <article>
+                <a class="blockheight" title="Block height" v-bind:href="'https://blockchain.info/search?search=' + count.last.height" target="_blank">
+                  {{ count.last.height }}
+                </a>
+                <h2>{{ count.last.value.toLocaleString() }}</h2>
+                <h3>unspent outputs in the last block</h3>
+              </article>
+            </div>
+            <div class="stats-row">
+              <article class="blue">
+                <h2>
+                  {{ Math.round(meta.total_amount).toLocaleString() }}
+                  <span class="dagger">&dagger;</span>
+                </h2>
+                <h3>total unspent BTC in all blocks</h3>
+              </article>
+              <article class="blue">
+                <a class="blockheight" title="Block height" v-bind:href="'https://blockchain.info/search?search=' + amount.max.height" target="_blank">
+                  {{ amount.max.height }}
+                </a>
+                <h2>
+                  {{ Math.round(amount.max.value).toLocaleString() }}
+                  <span class="dagger">&dagger;</span>
+                </h2>
+                <h3>unspent BTC in the most valuable block</h3>
+              </article>
+              <article class="blue">
+                <a class="blockheight" title="Block height" v-bind:href="'https://blockchain.info/search?search=' + amount.last.height" target="_blank">
+                  {{ amount.last.height }}
+                </a>
+                <h2>
+                  {{ Math.round(amount.last.value).toLocaleString() }}
+                  <span class="dagger">&dagger;</span>
+                </h2>
+                <h3>unspent BTC in the last block</h3>
+              </article>
+            </div>
+          </div>
+          <p class="small blue">
+            <span class="dagger">&dagger;</span> The displayed BTC amounts has been rounded to the closest whole bitcoin.
+          </p>
+        </div>
+      </div>
+
+      <div id="magnifier" class="magnifier">
+        <div class="viewport"></div>
+        <div class="magnifier-wrapper">
+          <div class="viewport-zoomed">
+            <canvas width="220" height="220">
+          </div>
+          <div class="label top">{{ height }}</div>
+          <div class="label bottom">{{ value.toLocaleString() }}</div>
+        </div>
+      </div>
+
+      <div class="donate">
+        <span title="Thank you! ♥︎">Donate: </span>
+        <a href="bitcoin:1JNHNJftiWu57UVpp2cjrNNHCeLwbNy3Zt?message=utxo-stats.com">
+          <div class="qr-code">
+            <img src="img/qr-code.png">
+          </div>
+          <span>1JNHNJftiWu57UVpp2cjrNNHCeLwbNy3Zt</span>
+        </a>
+      </div>
+
+      <a href="https://github.com/timothyej" target="_blank" class="about" title="Created by Timothy E. Johansson">
+        <img src="img/timothy.jpg">
+      </a>
     </div>
+
+    <script type="text/javascript" src="js/bundle.js"></script>
   </body>
 </html>

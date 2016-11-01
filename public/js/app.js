@@ -1,66 +1,99 @@
-var Buffer = require('buffer/').Buffer;
+var Vue = require('./vue');
 var moment = require('moment');
+var Promise = require('promise');
 
-function loadMetaData(callback) {
-  $.get('/data/meta.json', callback);
-}
+var config = require('./config');
+var blockYears = require('./block-years');
+var data = require('./data');
+var renderBlockchain = require('./render-blockchain');
+var throttle = require('./throttle');
+var scrollToBottom = require('./scroll-to-bottom');
 
-function loadUTXOCount(callback) {
-  $.get('/data/map-utxo-count', callback);
-}
+window.app = new Vue({
+  el: '#app',
+  data: {
+    BLOCKS_PER_ROW: config.BLOCKS_PER_ROW,
 
-function loadUTXOAmount(callback) {
-  $.get('/data/map-utxo-amount', callback);
-}
+    meta: { txouts: 0, total_amount: 0 },
+    count: { max: { value: 0 }, first: { value: 0 }, last: { value: 0 } },
+    amount: { max: { value: 0 }, first: { value: 0 }, last: { value: 0 } },
 
-function drawChart(id, loadFunction, meta, colorFunction) {
-  var block = {};
-  var max = 0;
+    blockYears: blockYears,
 
-  loadFunction(function (data) {
-    var buf = new Buffer(data, 'base64');
-    var length = buf.length / 8;
+    isAtTop: true,
+    isAtBottom: false,
 
-    for (var i = 0; i < length; ++i) {
-      var height = buf.readUInt32LE(i * 8);
-      var value = buf.readUInt32LE(i * 8 + 4);
+    height: 0,
+    value: 0,
 
-      if (value > max) {
-        max = value;
-      }
-
-      block[height] = value;
-    }
-
-    var c = document.getElementById(id);
-    var ctx = c.getContext('2d');
-
-    for (var i = 0; i < meta.height; ++i) {
-      var value = block[i+1];
-
-      if (value) {
-        var row = Math.floor(i / 504);
-        var col = Math.floor(i % 504);
-
-        ctx.fillStyle = colorFunction(value, max);
-        ctx.fillRect(col*2, row*2, 2, 2);
-      }
-    }
-  });
-}
-
-$(function () {
-  loadMetaData(function (meta) {
-    $('#updated-at').text(
-      moment(meta.updated_at * 1000).format('MMMM DD YYYY, kk:mm')
-    );
-
-    drawChart('utxo-count', loadUTXOCount, meta, function (value, max) {
-      return 'rgba(247, 147, 26, ' + (value / max) * 30 + ')';
-    });
-
-    drawChart('utxo-amount', loadUTXOAmount, meta, function (value, max) {
-      return 'rgba(0, 184, 255, ' + (value / max) / 1.1 + ')';
-    });
-  });
+    loaded: false
+  }
 });
+
+function renderBlockchains(meta) {
+  var promises = [];
+
+  promises[0] = renderBlockchain('utxo-count', data.getUTXOCount, meta, config.utxoCountColor).then(function (info) {
+    app.count = {
+      max: {
+        height: info.maxBlock,
+        value: info.block[info.maxBlock]
+      },
+      first: {
+        height: info.firstBlock,
+        value: info.block[info.firstBlock]
+      },
+      last: {
+        height: info.lastBlock,
+        value: info.block[info.lastBlock]
+      }
+    };
+  });
+
+  promises[1] = renderBlockchain('utxo-amount', data.getUTXOAmount, meta, config.utxoAmountColor).then(function (info) {
+    app.amount = {
+      max: {
+        height: info.maxBlock,
+        value: info.block[info.maxBlock] / 10000
+      },
+      first: {
+        height: info.firstBlock,
+        value: info.block[info.firstBlock] / 10000
+      },
+      last: {
+        height: info.lastBlock,
+        value: info.block[info.lastBlock] / 10000
+      }
+    };
+  });
+
+  Promise.all(promises).then(function () {
+    app.loaded = true;
+    scrollToBottom();
+  });
+}
+
+data.getMetaData(function (meta) {
+  meta.updated_at_formatted = moment(meta.updated_at * 1000).format('MMMM DD YYYY, kk:mm');
+  app.meta = meta;
+
+  // Let fonts etc. render before we render the blockchains.
+  setTimeout(function () {
+    renderBlockchains(meta);
+  }, 20);
+});
+
+$(document).scroll(throttle(10, function () {
+  var scrollTop = $(document).scrollTop();
+  var pageHeight = $(document).height() - $(window).height();
+  var isAtTop = scrollTop <= 0;
+  var isAtBottom = scrollTop >= pageHeight;
+
+  if (app.isAtTop !== isAtTop) {
+    app.isAtTop = isAtTop;
+  }
+
+  if (app.isAtBottom !== isAtBottom) {
+    app.isAtBottom = isAtBottom;
+  }
+}));
