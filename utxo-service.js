@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var Client = require('bitcoin-core');
+var scp = require('scp2');
 
 var appDir = path.dirname(require.main.filename);
 
@@ -9,6 +10,19 @@ var client = new Client({
   password: process.env.BITCOIN_PASSWORD,
   timeout: 60 * 1000 * 5
 });
+
+var scpOptions = {
+  host: process.env.UTXO_STATS_HOST,
+  username: process.env.UTXO_STATS_USERNAME,
+  password: process.env.UTXO_STATS_PASSWORD,
+  path: process.env.UTXO_STATS_PATH
+};
+
+var lastBlockHeight = 0;
+
+function getBlockCount() {
+  return client.command('getblockcount');
+}
 
 function getUTXOStats() {
   return client.command('gettxoutsetinfo', true);
@@ -32,10 +46,30 @@ function saveUTXOStats(stats) {
   fs.writeFileSync(appDir + '/public/data/meta.json', JSON.stringify(meta));
 }
 
-//setInterval(function () {
-  getUTXOStats().then(function (stats) {
-    saveUTXOStats(stats);
+function uploadUTXOFiles() {
+  scp.scp(appDir + '/public/data/', scpOptions, function (err) {
+    if (err) {
+      console.error(err);
+    }
+  });
+}
+
+setInterval(function () {
+  getBlockCount().then(function (height) {
+    if (height === lastBlockHeight) {
+      return;
+    }
+
+    lastBlockHeight = height;
+
+    console.log('Processing stats for block ' + height + '...');
+
+    return getUTXOStats().then(function (stats) {
+      console.log('  Saving and uploading data...');
+      saveUTXOStats(stats);
+      uploadUTXOFiles();
+    });
   }).catch(function (err) {
     console.error(err);
   });
-//}, 60 * 1000 * 10);
+}, 60 * 3 * 1000);
