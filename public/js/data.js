@@ -1,13 +1,17 @@
+function getTimestamp() {
+  return Math.floor(new Date().getTime() / 1000);
+}
+
 function getMetaData(callback) {
-  $.get('/data/meta.json', callback);
+  $.get('/data/meta.json?t=' + getTimestamp(), callback);
 }
 
 function getUTXOCount(callback) {
-  $.get('/data/map-utxo-count', callback);
+  $.get('/data/map-utxo-count?t=' + getTimestamp(), callback);
 }
 
 function getUTXOAmount(callback) {
-  $.get('/data/map-utxo-amount', callback);
+  $.get('/data/map-utxo-amount?t=' + getTimestamp(), callback);
 }
 
 module.exports = {
