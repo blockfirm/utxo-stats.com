@@ -1,3 +1,4 @@
+var $ = require('jquery');
 var config = require('./config');
 
 function positionToHeight(x, y) {

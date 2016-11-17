@@ -1,5 +1,6 @@
 var Buffer = require('buffer/').Buffer;
 var Promise = require('promise');
+var $ = require('jquery');
 
 var config = require('./config');
 var renderMagnifier = require('./render-magnifier');

@@ -1,3 +1,5 @@
+var $ = require('jquery');
+
 module.exports = function scrollToBottom() {
   setTimeout(function () {
     var scrollTop = $(document).height() - $(window).height();

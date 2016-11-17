@@ -1,6 +1,7 @@
 var Vue = require('./vue');
 var moment = require('moment');
 var Promise = require('promise');
+var $ = require('jquery');
 
 var config = require('./config');
 var blockYears = require('./block-years');

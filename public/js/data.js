@@ -1,3 +1,5 @@
+var $ = require('jquery');
+
 function getTimestamp() {
   return Math.floor(new Date().getTime() / 1000);
 }
