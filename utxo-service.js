@@ -46,11 +46,13 @@ function saveUTXOStats(stats) {
   fs.writeFileSync(appDir + '/public/data/meta.json', JSON.stringify(meta));
 }
 
-function uploadUTXOFiles() {
+function uploadUTXOFiles(callback) {
   scp.scp(appDir + '/public/data/', scpOptions, function (err) {
     if (err) {
       console.error(err);
     }
+
+    callback();
   });
 }
 
@@ -67,7 +69,10 @@ setInterval(function () {
     return getUTXOStats().then(function (stats) {
       console.log('  Saving and uploading data...');
       saveUTXOStats(stats);
-      uploadUTXOFiles();
+
+      uploadUTXOFiles(function () {
+        console.log('  Done');
+      });
     });
   }).catch(function (err) {
     console.error(err);
