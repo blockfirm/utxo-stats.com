@@ -1,31 +1,34 @@
-var fs = require('fs');
-var path = require('path');
-var Client = require('bitcoin-core');
+const fs = require('fs');
+const path = require('path');
+const Client = require('bitcoin-core');
 
-var appDir = path.dirname(require.main.filename);
+const APP_DIR = path.dirname(require.main.filename);
+const UPDATE_INTERVAL = 60 * 1000 * 5; // Every 5 minutes
 
-var client = new Client({
+const client = new Client({
   username: process.env.BITCOIN_USERNAME,
   password: process.env.BITCOIN_PASSWORD,
-  timeout: 60 * 1000 * 5
+  timeout: 60 * 1000 * 5 // 5 minutes
 });
 
-var lastBlockHeight = 0;
+let lastBlockHeight = 0;
 
-function getBlockCount() {
+const getBlockCount = () => {
   return client.command('getblockcount');
-}
+};
 
-function getUTXOStats() {
-  return client.command('gettxoutsetinfo', true);
-}
+const getUTXOStats = () => {
+  return client.command('gettxoutsetinfo', true); // blockmap = true
+};
 
-function saveUTXOStats(stats) {
-  var meta = {
-    updated_at: Math.floor(new Date().getTime() / 1000)
+const saveUTXOStats = (stats) => {
+  const now = Math.floor(new Date().getTime() / 1000);
+
+  const meta = {
+    updated_at: now
   };
 
-  Object.keys(stats).forEach(function (key) {
+  Object.keys(stats).forEach((key) => {
     if (key === 'map_utxo_count' || key === 'map_utxo_amount') {
       return;
     }
@@ -33,27 +36,31 @@ function saveUTXOStats(stats) {
     meta[key] = stats[key];
   });
 
-  fs.writeFileSync(appDir + '/public/data/map-utxo-count', stats.map_utxo_count);
-  fs.writeFileSync(appDir + '/public/data/map-utxo-amount', stats.map_utxo_amount);
-  fs.writeFileSync(appDir + '/public/data/meta.json', JSON.stringify(meta));
-}
+  fs.writeFileSync(`${APP_DIR}/public/data/map-utxo-count`, stats.map_utxo_count);
+  fs.writeFileSync(`${APP_DIR}/public/data/map-utxo-amount`, stats.map_utxo_amount);
+  fs.writeFileSync(`${APP_DIR}/public/data/meta.json`, JSON.stringify(meta));
+};
 
-setInterval(function () {
-  getBlockCount().then(function (height) {
-    if (height === lastBlockHeight) {
-      return;
-    }
+const checkUTXOStats = () => {
+  getBlockCount()
+    .then((blockHeight) => {
+      if (blockHeight === lastBlockHeight) {
+        return;
+      }
 
-    lastBlockHeight = height;
+      lastBlockHeight = blockHeight;
 
-    console.log('Processing stats for block ' + height + '...');
+      console.log(`Processing stats for block ${blockHeight}...`);
 
-    return getUTXOStats().then(function (stats) {
-      console.log('  Saving data...');
-      saveUTXOStats(stats);
-      console.log('  Done');
+      return getUTXOStats().then((stats) => {
+        console.log('  Saving data...');
+        saveUTXOStats(stats);
+        console.log('  Done');
+      });
+    })
+    .catch((err) => {
+      console.error(err);
     });
-  }).catch(function (err) {
-    console.error(err);
-  });
-}, 60 * 3 * 1000);
+};
+
+setInterval(checkUTXOStats, UPDATE_INTERVAL);

@@ -1,9 +1,11 @@
-var path = require('path');
-var express = require('express');
-var app = express();
+const path = require('path');
+const express = require('express');
+const app = express();
+
+const PORT = 8910;
 
 app.use(express.static('public'));
 
-app.listen(8910, function () {
-  console.log('Server is listening on 8910.');
+app.listen(PORT, () => {
+  console.log(`Server is listening on ${PORT}.`);
 });
