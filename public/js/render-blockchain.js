@@ -57,10 +57,10 @@ module.exports = function renderBlockchain(id, loadFunction, meta, colorFunction
       $(canvas).mousemove(renderMagnifier.bind(null, magnifier, meta, block, max, colorFunction, function (value) {
         if (id === 'utxo-amount') {
           var btc = value / 10000;
-          return btc.toFixed(3);
+          return btc.toFixed(3) + ' BTC';
         }
 
-        return value;
+        return value + ' UTXOs';
       }));
 
       $(canvas).mouseenter(function () {
