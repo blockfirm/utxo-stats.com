@@ -11,11 +11,11 @@
   "author": "<timothy.ejohansson@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "bitcoin-core": "^1.1.0",
-    "buffer": "^5.0.0",
-    "express": "^4.13.3",
-    "jquery": "^3.1.1",
-    "moment": "^2.15.2",
-    "promise": "^7.1.1"
+    "bitcoin-core": "^2.0.0",
+    "buffer": "^5.0.8",
+    "express": "^4.16.2",
+    "jquery": "^3.3.1",
+    "moment": "^2.20.1",
+    "promise": "^7.3.1"
   }
 }
