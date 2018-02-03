@@ -1,7 +1,6 @@
 var fs = require('fs');
 var path = require('path');
 var Client = require('bitcoin-core');
-var scp = require('scp2');
 
 var appDir = path.dirname(require.main.filename);
 
@@ -10,13 +9,6 @@ var client = new Client({
   password: process.env.BITCOIN_PASSWORD,
   timeout: 60 * 1000 * 5
 });
-
-var scpOptions = {
-  host: process.env.UTXO_STATS_HOST,
-  username: process.env.UTXO_STATS_USERNAME,
-  password: process.env.UTXO_STATS_PASSWORD,
-  path: process.env.UTXO_STATS_PATH
-};
 
 var lastBlockHeight = 0;
 
@@ -46,16 +38,6 @@ function saveUTXOStats(stats) {
   fs.writeFileSync(appDir + '/public/data/meta.json', JSON.stringify(meta));
 }
 
-function uploadUTXOFiles(callback) {
-  scp.scp(appDir + '/public/data/', scpOptions, function (err) {
-    if (err) {
-      console.error(err);
-    }
-
-    callback();
-  });
-}
-
 setInterval(function () {
   getBlockCount().then(function (height) {
     if (height === lastBlockHeight) {
@@ -67,12 +49,9 @@ setInterval(function () {
     console.log('Processing stats for block ' + height + '...');
 
     return getUTXOStats().then(function (stats) {
-      console.log('  Saving and uploading data...');
+      console.log('  Saving data...');
       saveUTXOStats(stats);
-
-      uploadUTXOFiles(function () {
-        console.log('  Done');
-      });
+      console.log('  Done');
     });
   }).catch(function (err) {
     console.error(err);
